@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sachit Mahajan · Robotics</title>
+  <meta name="description" content="A timeline of the robots Sachit Mahajan has built and worked on." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="hero">
+    <div class="hero-inner">
+      <p class="eyebrow">Roboticist</p>
+      <h1 id="name"></h1>
+      <p class="tagline" id="tagline"></p>
+      <p class="about" id="about"></p>
+      <p class="keywords" id="keywords"></p>
+      <nav class="links" id="links"></nav>
+    </div>
+    <a class="scroll-cue" href="#timeline" aria-label="Scroll to timeline">↓</a>
+  </header>
+
+  <main>
+    <section class="skills" aria-labelledby="skills-title">
+      <h2 id="skills-title">Skills</h2>
+      <dl id="skills"></dl>
+    </section>
+
+    <section class="pubs" aria-labelledby="pubs-title">
+      <h2 id="pubs-title">Publications</h2>
+      <ul id="pubs"></ul>
+      <div class="pubs-foot" id="pubs-foot"></div>
+    </section>
+
+    <section id="timeline" class="timeline" aria-label="Robot timeline"></section>
+  </main>
+
+  <footer class="footer" id="footer"></footer>
+
+  <div class="lightbox" id="lightbox" hidden>
+    <button class="lightbox-close" aria-label="Close">×</button>
+    <div class="lightbox-content" id="lightbox-content"></div>
+  </div>
+
+  <script src="data.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
