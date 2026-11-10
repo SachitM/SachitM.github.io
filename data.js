@@ -163,9 +163,10 @@ const TIMELINE = [
       "assets/img/salsa-scoremaps.jpg",
     ],
     links: [
+      { label: "Report (PDF)", url: "https://github.com/heethesh/SALSA-Semantic-Assisted-SLAM/blob/master/docs/report.pdf" },
+      { label: "Code on GitHub", url: "https://github.com/heethesh/SALSA-Semantic-Assisted-SLAM" },
       { label: "TUM-RGBD video", url: "https://youtu.be/0TvNcxreGtI" },
       { label: "OpenLORIS video", url: "https://youtu.be/9ku1nIotTUw" },
-      // TODO: add the GitHub repo link once you confirm its URL
     ],
   },
   {
@@ -188,6 +189,10 @@ const TIMELINE = [
       "Mirrors look like open doorways to a robot, so it maps a phantom room and may plan a path 'through' the mirror. We detect candidate mirrors, then confirm them from a better vantage point by attaching a fiducial marker to the sensor rig and using its self-reflection to estimate the mirror plane. A novel coarse-to-fine region-growing method finds the mirror's boundary and extent so it can be tracked, and the point cloud is corrected by filling the mirror plane and re-projecting the reflected points. We demonstrated it on a custom camera-LiDAR rig, and the pipeline works with most visual and depth sensors.",
     tags: ["LiDAR", "Mapping", "Computer vision", "Sensor fusion"],
     media: ["assets/img/mirror1.png", "assets/img/mirror2.png"],
+    links: [
+      { label: "Paper (PDF)", url: "https://github.com/SachitM/Mirror-Mirror-on-the-Wall-Detecting-Mirrors-and-Correcting-Point-Clouds/blob/main/Mirror%20Project%20Paper.pdf" },
+      { label: "Code on GitHub", url: "https://github.com/SachitM/Mirror-Mirror-on-the-Wall-Detecting-Mirrors-and-Correcting-Point-Clouds" },
+    ],
   },
   {
     year: "2021",
@@ -198,6 +203,10 @@ const TIMELINE = [
       "A new object representation for the SLAM front end. Each frame's objects and planes are detected, and every object is described by its pose relative to the planes. This lets the system tell when an object has moved and drop it from odometry, and flag repeated, symmetric, or poorly estimated objects. With those filtered out, even a single object can be enough for scene recognition and loop closure.",
     tags: ["SLAM", "Object SLAM", "Dynamic environments", "Perception"],
     media: ["assets/img/objectslam.png"],
+    links: [
+      { label: "Paper (PDF)", url: "https://github.com/SachitM/Structure-Aware-Object-Representation-for-Object-SLAM/blob/main/Structure_Aware_Object%20SLAM.pdf" },
+      { label: "Code on GitHub", url: "https://github.com/SachitM/Structure-Aware-Object-Representation-for-Object-SLAM" },
+    ],
   },
   { marker: true, year: "2021 – Present", title: "Amazon · Software Development Engineer (I → II → III)" },
   {
