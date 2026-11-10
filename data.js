@@ -231,12 +231,14 @@ const PUBLICATIONS = [
     venue: "CVPR 2025",
     authors:
       "Joey Wilson, Marcelino Almeida, Sachit Mahajan, Martin Labrie, Maani Ghaffari, Omid Alizadeh, Min Sun, Cheng-Hao Kuo, Arnie Sen",
+    url: "https://arxiv.org/pdf/2503.07819",
   },
   {
     title: "Modeling Uncertainty in 3D Gaussian Splatting through Continuous Semantic Splatting",
     venue: "ICRA 2025",
     authors:
       "Joey Wilson, Marcelino Almeida, Min Sun, Sachit Mahajan, Maani Ghaffari, Parker Ewen, Omid Alizadeh, Cheng-Hao Kuo, Arnie Sen",
+    url: "https://arxiv.org/pdf/2411.02547",
   },
   {
     title: "Design of a Medical Assistant Robot",
