@@ -18,6 +18,7 @@ function mediaNode(src, alt) {
   img.src = src;
   img.alt = alt;
   img.loading = "lazy";
+  img.decoding = "async";
   return img;
 }
 
@@ -138,6 +139,111 @@ function renderTimeline() {
   });
 }
 
+// A slowly drifting pose graph: nodes joined by edges when close, a few larger
+// "keyframe" nodes. Purely decorative, so it is hidden from screen readers.
+function initGraph() {
+  const box = document.getElementById("hero-art");
+  if (!box) return;
+  const canvas = el("canvas");
+  box.append(canvas);
+  const ctx = canvas.getContext("2d");
+  if (!ctx) { box.remove(); return; }
+
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const N = 48;
+  let w = 0, h = 0, accent = "#4fb3ff", line = "#263241";
+  const nodes = Array.from({ length: N }, (_, i) => ({
+    x: Math.random(), y: Math.random(),
+    vx: (Math.random() - 0.5) * 0.00045, vy: (Math.random() - 0.5) * 0.00045,
+    key: i % 8 === 0,
+  }));
+
+  function colors() {
+    const cs = getComputedStyle(document.documentElement);
+    accent = cs.getPropertyValue("--accent").trim() || accent;
+    line = cs.getPropertyValue("--border").trim() || line;
+  }
+  function resize() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    w = box.clientWidth; h = box.clientHeight;
+    canvas.width = w * dpr; canvas.height = h * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    colors();
+    draw();
+  }
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+    const reach = Math.min(w, h) * 0.24;
+    ctx.lineWidth = 1;
+    for (let i = 0; i < N; i++) {
+      const a = nodes[i];
+      for (let j = i + 1; j < N; j++) {
+        const b = nodes[j];
+        const d = Math.hypot((a.x - b.x) * w, (a.y - b.y) * h);
+        if (d < reach) {
+          ctx.globalAlpha = (1 - d / reach) * (a.key || b.key ? 0.9 : 0.5);
+          ctx.strokeStyle = a.key || b.key ? accent : line;
+          ctx.beginPath();
+          ctx.moveTo(a.x * w, a.y * h);
+          ctx.lineTo(b.x * w, b.y * h);
+          ctx.stroke();
+        }
+      }
+    }
+    ctx.globalAlpha = 1;
+    nodes.forEach((n) => {
+      const x = n.x * w, y = n.y * h;
+      ctx.fillStyle = n.key ? accent : line;
+      ctx.beginPath();
+      ctx.arc(x, y, n.key ? 4 : 2.2, 0, Math.PI * 2);
+      ctx.fill();
+      if (n.key) {
+        ctx.strokeStyle = accent;
+        ctx.globalAlpha = 0.35;
+        ctx.beginPath();
+        ctx.arc(x, y, 10, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+    });
+  }
+  function step() {
+    nodes.forEach((n) => {
+      n.x += n.vx; n.y += n.vy;
+      if (n.x < 0.02 || n.x > 0.98) n.vx *= -1;
+      if (n.y < 0.02 || n.y > 0.98) n.vy *= -1;
+    });
+    draw();
+  }
+
+  window.addEventListener("resize", resize);
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", () => { colors(); draw(); });
+  resize();
+  if (reduce) return; // one still frame
+
+  let running = false;
+  const loop = () => { if (running) { step(); requestAnimationFrame(loop); } };
+  if ("IntersectionObserver" in window) {
+    new IntersectionObserver(([e]) => {
+      const was = running;
+      running = e.isIntersecting;
+      if (running && !was) requestAnimationFrame(loop);
+    }).observe(box);
+  } else { running = true; requestAnimationFrame(loop); }
+}
+
+function renderHeroExtras() {
+  initGraph();
+
+  const list = document.getElementById("highlights");
+  (SITE.highlights || []).forEach((h) => {
+    const li = el("li");
+    li.append(el("strong", null, h.value), el("span", null, h.label));
+    list.append(li);
+  });
+  if (!list.children.length) list.remove();
+}
+
 function renderHero() {
   document.getElementById("name").textContent = SITE.name;
   document.getElementById("tagline").textContent = SITE.tagline;
@@ -243,6 +349,7 @@ lightbox.addEventListener("click", (e) => {
 document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !lightbox.hidden) closeLightbox(); });
 
 renderHero();
+renderHeroExtras();
 renderSkills();
 renderTimeline();
 renderPubs();

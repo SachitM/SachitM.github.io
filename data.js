@@ -22,6 +22,12 @@ const SITE = {
   name: "Sachit Mahajan",
   tagline:
     "Roboticist building intelligent autonomous systems that understand, navigate, and operate reliably in the real world.",
+  // Three quick facts under the buttons.
+  highlights: [
+    { value: "Thousands", label: "of robots running my features on SLAM" },
+    { value: "CVPR · ICRA", label: "2025 papers on 3D Gaussian Splatting" },
+    { value: "6+ years", label: "across SLAM, spatial perception, and autonomous robots" },
+  ],
   keywords: ["SLAM", "Spatial Perception", "Embodied AI", "Sensor Fusion", "World Models", "3D Vision", "Visual Navigation"],
   // TODO: refine into your one-line proposed endeavor
   about:
@@ -40,7 +46,7 @@ const SKILLS = [
   {
     group: "SLAM",
     items: [
-      "Visual and visual-inertial odometry (VIO)", "Visual SLAM", "Pose graph optimization",
+      "Visual and visual-inertial odometry (VIO)", "Visual SLAM", "Extended Kalman Filters (EKF)", "Pose graph optimization",
       "Robust outlier rejection and loop-closure validation", "Nonlinear optimization (Ceres, GTSAM)",
       "Structure from motion (SfM, COLMAP)", "Sensor fusion", "Object-based and lifelong localization", "3D geometry",
     ],
@@ -213,7 +219,6 @@ const TIMELINE = [
     year: "2021 – 2024",
     title: "Astro Home Robot",
     context: "Amazon · Consumer Robotics (CoRo) · Software Development Engineer I/II",
-    // TODO: astro.jpeg shows an office whiteboard in the background. Check it is OK to publish, or crop it.
     text:
       "Part of the team that developed and shipped the SLAM module for Amazon's consumer home robot, deployed to thousands of customers. I designed a robust pose graph optimization system that rejects outliers to correct odometry drift, and built benchmarking tools and a long-term autonomy simulation framework to validate behavior over extended time.",
     tags: ["SLAM", "Pose graph optimization", "Consumer robotics", "Simulation", "Evaluation"],
