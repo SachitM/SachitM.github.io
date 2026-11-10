@@ -476,6 +476,9 @@ function initGraph() {
     hovering = true;
   });
   const release = () => { hovering = false; pointerAt = performance.now(); touchStart = null; };
+  // Belt and braces for browsers that ignore `touch-action: none`: a finger that moves on the
+  // panel never scrolls the page. (A tap has no movement, so it still produces a click.)
+  box.addEventListener("touchmove", (e) => e.preventDefault(), { passive: false });
   box.addEventListener("pointerleave", release);
   box.addEventListener("pointercancel", release);
   box.addEventListener("pointerup", (e) => { if (e.pointerType === "touch") release(); });
