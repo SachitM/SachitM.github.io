@@ -444,6 +444,9 @@ function initGraph() {
   function frame() { step(performance.now()); draw(); }
 
   function resize() {
+    // Phones fire resize events while scrolling (the address bar shows and hides).
+    // Only rebuild when the panel's own size really changed.
+    if (box.clientWidth === w && box.clientHeight === h && w > 0) return;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     w = box.clientWidth; h = box.clientHeight;
     canvas.width = w * dpr; canvas.height = h * dpr;
@@ -455,18 +458,39 @@ function initGraph() {
   }
 
   // --- input ---
-  box.addEventListener("pointerenter", (e) => {
+  // Mouse: the robot follows the cursor while it is over the panel.
+  // Touch: a drag drives the robot, a tap is a localization fix. A touch only counts as a
+  // drag once the finger has moved a little, so a tap never teleports the robot or clears the graph.
+  let touchStart = null;
+  const place = (e) => {
     const r = canvas.getBoundingClientRect();
     pointer = { x: e.clientX - r.left, y: e.clientY - r.top };
     pointerAt = performance.now();
+  };
+  box.addEventListener("pointerdown", (e) => {
+    if (e.pointerType === "touch") touchStart = { x: e.clientX, y: e.clientY, moved: false };
+  });
+  box.addEventListener("pointerenter", (e) => {
+    if (e.pointerType === "touch") return;
+    place(e);
     hovering = true;
   });
-  box.addEventListener("pointerleave", () => { hovering = false; pointerAt = performance.now(); });
+  const release = () => { hovering = false; pointerAt = performance.now(); touchStart = null; };
+  box.addEventListener("pointerleave", release);
+  box.addEventListener("pointercancel", release);
+  box.addEventListener("pointerup", (e) => { if (e.pointerType === "touch") release(); });
   box.addEventListener("pointermove", (e) => {
+    if (e.pointerType === "touch") {
+      if (!touchStart) return;
+      if (!touchStart.moved) {
+        if (Math.hypot(e.clientX - touchStart.x, e.clientY - touchStart.y) < 10) return;
+        touchStart.moved = true;
+        hovering = true;
+      }
+    }
     const r = canvas.getBoundingClientRect();
     pointer = { x: e.clientX - r.left, y: e.clientY - r.top };
     pointerAt = performance.now();
-    if (!userSeen) { userSeen = true; hint.classList.add("gone"); }
     if (reduce) { step(pointerAt); draw(); }
   });
   box.addEventListener("click", () => { localize(); if (reduce) { step(performance.now()); draw(); } });
