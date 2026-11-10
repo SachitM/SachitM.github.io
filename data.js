@@ -109,7 +109,7 @@ const TIMELINE = [
     text:
       "A wheeled mobile manipulator with an arm that I designed, built, and programmed on my own for a school robotics competition. It picked up objects and placed them on the course, and finished 3rd place.",
     tags: ["Manipulation", "Embedded", "Mechanical design"],
-    award: "3rd Place",
+    // award: "3rd Place",
     media: ["assets/img/dps2.jpeg"],
   },
   { marker: true, year: "2013 – 2017", title: "VIT University · B.Tech, Electronics & Communication Engineering" },
@@ -120,7 +120,7 @@ const TIMELINE = [
     text:
       "Our team built a Martian rover analogue with a robotic arm to complete tasks at a designated site at the European Rover Challenge 2016 in Poland. As Lead of the Electrical Department, I was in charge of all electrical interconnections, image processing, and programming the sensors and motor drivers on an Arduino, Raspberry Pi, and BeagleBone Black stack, and I guided a team of 5 juniors. I devised an onboard algorithm that detects landmarks to estimate the rover's location, and worked on the arm's inverse kinematics. The team ranked 12th in the world and 1st in Asia.",
     tags: ["Field robotics", "Embedded", "Computer vision", "Kinematics", "Teleoperation"],
-    award: "12th World · 1st in Asia",
+    // award: "12th World · 1st in Asia",
     media: [
       "assets/img/rover2.jpeg",
       "assets/img/rover1.jpeg",
@@ -145,7 +145,7 @@ const TIMELINE = [
     text:
       "I wrote real-time firmware for GreyOrange's warehouse autonomous mobile robots, focused on safety, power, and diagnostics. That included a robust obstacle-detection safety field with a varying field of view (also used to aid localization and navigation), emergency handling, continuous health monitoring of subsystems over Ethernet, UART, SPI, I2C and CAN, and a power system with active cell balancing that increased operational uptime by over 50%. I received the company's Rising Star Award.",
     tags: ["Embedded", "RTOS", "Safety", "Power systems", "Warehouse automation"],
-    award: "Rising Star Award",
+    // award: "Rising Star Award",
     media: ["assets/img/gor1.jpeg", "assets/img/gor2.jpeg"],
   },
   { marker: true, year: "2019 – 2021", title: "Carnegie Mellon University · M.S. Robotic Systems Development" },
