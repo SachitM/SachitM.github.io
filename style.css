@@ -8,6 +8,7 @@
   --accent: #4fb3ff;
   --accent-soft: rgba(79, 179, 255, 0.12);
   --gold: #f0b94a;
+  --loop: #3fb68b;
   --radius: 14px;
   --spine: 2px;
   --max: 1120px;
@@ -25,6 +26,7 @@
     --accent: #0a6fd1;
     --accent-soft: rgba(10, 111, 209, 0.1);
     --gold: #a86d00;
+    --loop: #1a8a62;
     color-scheme: light;
   }
 }
@@ -87,20 +89,77 @@ button { font: inherit; color: inherit; }
 .hero-copy > :nth-child(6) { animation-delay: 0.3s; }
 .hero-copy > :nth-child(7) { animation-delay: 0.36s; }
 
-/* Pose-graph animation (canvas), faded at the edges so it blends into the page */
+/* Interactive pose graph (canvas): move to drive, click to localize */
 .hero-art {
   position: relative;
   aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background:
+    linear-gradient(var(--border) 1px, transparent 1px) 0 0 / 32px 32px,
+    linear-gradient(90deg, var(--border) 1px, transparent 1px) 0 0 / 32px 32px,
+    var(--surface);
+  cursor: crosshair;
+  touch-action: pan-y;
   animation: rise 0.9s ease 0.15s both;
 }
-.hero-art canvas {
+.hero-art canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+.graph-legend {
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  -webkit-mask-image: radial-gradient(closest-side, #000 55%, transparent 100%);
-  mask-image: radial-gradient(closest-side, #000 55%, transparent 100%);
+  top: 12px;
+  left: 14px;
+  list-style: none;
+  margin: 0;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 0.72rem;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  pointer-events: none;
 }
+.graph-legend li { display: flex; align-items: center; gap: 8px; }
+.lg { display: inline-block; flex: none; width: 18px; height: 0; }
+.lg.est { border-top: 2px solid var(--accent); }
+.lg.truth { border-top: 2px dotted var(--muted); }
+.lg.loop { border-top: 2px dashed var(--loop); }
+.lg.fix { width: 10px; height: 10px; margin: 0 4px; border: 2px solid var(--gold); border-radius: 50%; }
+
+.graph-meter {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  pointer-events: none;
+}
+.graph-meter b { display: block; width: 76px; height: 6px; border-radius: 3px; background: var(--border); overflow: hidden; }
+.graph-meter i { display: block; width: 100%; height: 100%; background: var(--gold); transform-origin: left; transform: scaleX(0); transition: transform 0.15s linear; }
+
+.graph-hint {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 12px;
+  margin: 0;
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--muted);
+  pointer-events: none;
+  transition: opacity 0.5s ease;
+}
+.graph-hint.gone { opacity: 0; }
 
 /* Facts row */
 .highlights {
@@ -118,7 +177,8 @@ button { font: inherit; color: inherit; }
 
 @media (max-width: 900px) {
   .hero-inner { grid-template-columns: 1fr; gap: 32px; }
-  .hero-art { aspect-ratio: 16 / 9; }
+  .hero-art { aspect-ratio: 4 / 3; }
+  .graph-legend { display: none; }
   .highlights { grid-template-columns: 1fr; gap: 14px; }
 }
 @media (prefers-reduced-motion: reduce) {

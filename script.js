@@ -139,90 +139,345 @@ function renderTimeline() {
   });
 }
 
-// A slowly drifting pose graph: nodes joined by edges when close, a few larger
-// "keyframe" nodes. Purely decorative, so it is hidden from screen readers.
+// Interactive pose graph with a real optimizer (2D positions only).
+//
+// A robot drives along the pointer (or a demo loop). Odometry edges carry a noisy,
+// biased measurement of each step, so dead reckoning drifts. Constraints added later,
+// a loop closure (automatic) or a localization fix (click), are folded in by re-solving
+// the WHOLE graph: minimise  sum  w * |x_j - x_i - z|^2  over all keyframe positions.
+// With positions only this is linear least squares, solved exactly with a Cholesky
+// factorisation. Orientation is not modelled, which is what would make it nonlinear.
 function initGraph() {
   const box = document.getElementById("hero-art");
   if (!box) return;
   const canvas = el("canvas");
+  canvas.setAttribute("aria-hidden", "true");
   box.append(canvas);
   const ctx = canvas.getContext("2d");
   if (!ctx) { box.remove(); return; }
 
   const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const N = 48;
-  let w = 0, h = 0, accent = "#4fb3ff", line = "#263241";
-  const nodes = Array.from({ length: N }, (_, i) => ({
-    x: Math.random(), y: Math.random(),
-    vx: (Math.random() - 0.5) * 0.00045, vy: (Math.random() - 0.5) * 0.00045,
-    key: i % 8 === 0,
-  }));
+  const touch = window.matchMedia("(hover: none)").matches;
+  const STEP = 28;          // px of travel between keyframes
+  const MAX_KF = 160;       // trail length; the oldest keyframes fade out
+  const LC_MIN_GAP = 10;    // a loop closure needs a keyframe at least this far back
+  const LC_RADIUS = 26;     // ...whose true position is within this many px
+  const LC_COOLDOWN = 6;    // keyframes to wait between loop closures
+  const BIAS = { x: 0.09, y: 0.05 }; // systematic odometry error per px travelled
+  // constraint weights (information): odometry is the weak one
+  const W_ODO = 1, W_LC = 30, W_FIX = 300, W_GAUGE = 1000;
+  // self-driving demo
+  const DEMO_SPEED = 0.0084;  // figure-eight speed (was 0.012; 30% slower)
+  const DEMO_FIX_EVERY = 14;  // at least this many keyframes between automatic global fixes
+  const DEMO_FIX_ERR = 22;    // ...and the tip must have drifted at least this many px
 
-  function colors() {
+  // --- overlay: legend, drift meter, hint (plain DOM, over the canvas) ---
+  const legend = el("ul", "graph-legend");
+  [["est", "Estimated (optimized)"], ["truth", "Ground truth"], ["fix", "Localization fix"], ["loop", "Loop closure"]].forEach(([k, t]) => {
+    const li = el("li");
+    li.append(el("i", "lg " + k), document.createTextNode(t));
+    legend.append(li);
+  });
+  const meterBar = el("i");
+  const track = el("b");
+  track.append(meterBar);
+  const meter = el("div", "graph-meter");
+  meter.append(el("span", null, "Error"), track);
+  const hint = el("p", "graph-hint", touch ? "Drag to drive the robot · tap to localize" : "Move to drive the robot · click to localize");
+  box.append(legend, meter, hint);
+
+  // --- state ---
+  let w = 0, h = 0;
+  let col = { accent: "#4fb3ff", line: "#263241", warn: "#f0b94a", muted: "#8a99a8", loop: "#3fb68b" };
+  // keyframe: id, true pos (tx,ty), displayed estimate (ex,ey), optimized target (sx,sy),
+  // odometry measurement from the previous keyframe (ux,uy)
+  const kfs = [];
+  const loops = [];   // loop-closure constraints {a, b, zx, zy}
+  const priors = [];  // absolute constraints {kf, x, y, w}: localization fixes and the gauge anchor
+  const ripples = [];
+  let nextId = 0, lastLCId = -999, lastFixId = -999;
+  let pointer = null, pointerAt = 0, demoT = 0, userSeen = false, hovering = false;
+  // the pointer is in charge while it is over the panel, and for 2.5 s after it leaves or stops
+  const manual = (now) => pointer && (hovering || now - pointerAt < 2500);
+
+  function readColors() {
     const cs = getComputedStyle(document.documentElement);
-    accent = cs.getPropertyValue("--accent").trim() || accent;
-    line = cs.getPropertyValue("--border").trim() || line;
+    const get = (n, d) => cs.getPropertyValue(n).trim() || d;
+    col = { accent: get("--accent", col.accent), line: get("--border", col.line), warn: get("--gold", col.warn), muted: get("--muted", col.muted), loop: get("--loop", col.loop) };
   }
+
+  function reset() { kfs.length = 0; loops.length = 0; priors.length = 0; ripples.length = 0; lastLCId = -999; lastFixId = -999; }
+
+  // ---- the optimizer ----
+  // Solve A v = b for each right-hand side with a dense Cholesky factorisation (A is SPD
+  // because the gauge prior pins the graph). n is at most MAX_KF, so this takes ~1 ms.
+  function choleskySolve(A, n, rhs) {
+    const L = new Float64Array(n * n);
+    for (let i = 0; i < n; i++) {
+      for (let j = 0; j <= i; j++) {
+        let s = A[i * n + j];
+        for (let k = 0; k < j; k++) s -= L[i * n + k] * L[j * n + k];
+        if (i === j) { if (s <= 1e-12) return null; L[i * n + i] = Math.sqrt(s); }
+        else L[i * n + j] = s / L[j * n + j];
+      }
+    }
+    return rhs.map((b) => {
+      const y = new Float64Array(n), x = new Float64Array(n);
+      for (let i = 0; i < n; i++) {
+        let s = b[i];
+        for (let k = 0; k < i; k++) s -= L[i * n + k] * y[k];
+        y[i] = s / L[i * n + i];
+      }
+      for (let i = n - 1; i >= 0; i--) {
+        let s = y[i];
+        for (let k = i + 1; k < n; k++) s -= L[k * n + i] * x[k];
+        x[i] = s / L[i * n + i];
+      }
+      return x;
+    });
+  }
+
+  function optimize() {
+    const n = kfs.length;
+    if (n < 2) return;
+    const base = kfs[0].id;
+    const A = new Float64Array(n * n), bx = new Float64Array(n), by = new Float64Array(n);
+    // a relative constraint  x_j - x_i = z  with weight wt
+    const edge = (i, j, zx, zy, wt) => {
+      A[i * n + i] += wt; A[j * n + j] += wt; A[i * n + j] -= wt; A[j * n + i] -= wt;
+      bx[j] += wt * zx; bx[i] -= wt * zx; by[j] += wt * zy; by[i] -= wt * zy;
+    };
+    for (let i = 1; i < n; i++) edge(i - 1, i, kfs[i].ux, kfs[i].uy, W_ODO);
+    loops.forEach((l) => edge(l.a.id - base, l.b.id - base, l.zx, l.zy, W_LC));
+    priors.forEach((p) => {  // an absolute constraint  x_i = p
+      const i = p.kf.id - base;
+      A[i * n + i] += p.w; bx[i] += p.w * p.x; by[i] += p.w * p.y;
+    });
+    const sol = choleskySolve(A, n, [bx, by]);
+    if (!sol) return;
+    kfs.forEach((k, i) => { k.sx = sol[0][i]; k.sy = sol[1][i]; });
+  }
+
+  // the first keyframe carries a strong prior so the whole graph cannot slide
+  function setGauge() {
+    for (let i = priors.length - 1; i >= 0; i--) if (priors[i].gauge) priors.splice(i, 1);
+    priors.push({ kf: kfs[0], x: kfs[0].sx, y: kfs[0].sy, w: W_GAUGE, gauge: true });
+  }
+
+  function addKeyframe(x, y) {
+    const prev = kfs[kfs.length - 1];
+    const kf = { id: nextId++, tx: x, ty: y, ex: x, ey: y, sx: x, sy: y, ux: 0, uy: 0, fixed: false };
+    if (prev) {
+      // odometry: the true step, plus systematic bias and noise
+      const dx = x - prev.tx, dy = y - prev.ty, dist = Math.hypot(dx, dy);
+      kf.ux = dx + BIAS.x * dist + (Math.random() - 0.5) * 4;
+      kf.uy = dy + BIAS.y * dist + (Math.random() - 0.5) * 4;
+      kf.sx = prev.sx + kf.ux; kf.sy = prev.sy + kf.uy;   // dead-reckon from the latest solution
+      kf.ex = prev.ex + kf.ux; kf.ey = prev.ey + kf.uy;
+    }
+    kfs.push(kf);
+    if (kfs.length === 1) setGauge();
+    if (kfs.length > MAX_KF) {
+      kfs.shift();
+      const first = kfs[0].id;
+      for (let i = loops.length - 1; i >= 0; i--) if (loops[i].a.id < first) loops.splice(i, 1);
+      for (let i = priors.length - 1; i >= 0; i--) if (priors[i].kf.id < first) priors.splice(i, 1);
+      setGauge();
+    }
+    detectLoop();
+  }
+
+  // Automatic loop closure: the newest keyframe is truly back near an older one (at least
+  // LC_MIN_GAP keyframes ago). Add a relative constraint between them and re-solve.
+  function detectLoop() {
+    const k = kfs.length - 1;
+    const cur = kfs[k];
+    if (k < LC_MIN_GAP || cur.id - lastLCId < LC_COOLDOWN) return;
+    let best = -1, bestD = LC_RADIUS;
+    for (let i = 0; i <= k - LC_MIN_GAP; i++) {
+      const d = Math.hypot(cur.tx - kfs[i].tx, cur.ty - kfs[i].ty);
+      if (d < bestD) { bestD = d; best = i; }
+    }
+    if (best < 0) return;
+    const a = kfs[best];
+    // what the "scan match" measures: the true offset between the two poses (plus a little noise)
+    loops.push({ a, b: cur, zx: cur.tx - a.tx + (Math.random() - 0.5), zy: cur.ty - a.ty + (Math.random() - 0.5) });
+    ripples.push({ x: cur.tx, y: cur.ty, t: 0, loop: true });
+    lastLCId = cur.id;
+    optimize();
+  }
+
+  // Localization fix (click, or the demo): an absolute position measurement of the newest keyframe.
+  function localize() {
+    const tip = kfs[kfs.length - 1];
+    if (!tip || kfs.length < 2 || tip.fixed) return;
+    tip.fixed = true;
+    lastFixId = tip.id;
+    priors.push({ kf: tip, x: tip.tx, y: tip.ty, w: W_FIX });
+    ripples.push({ x: tip.tx, y: tip.ty, t: 0 });
+    optimize();
+  }
+
+  function driverPos(now) {
+    if (manual(now)) return pointer;
+    demoT += DEMO_SPEED;
+    return { x: w / 2 + w * 0.34 * Math.sin(demoT), y: h / 2 + h * 0.26 * Math.sin(demoT * 2) };
+  }
+
+  const err = (k) => Math.hypot(k.ex - k.tx, k.ey - k.ty);
+
+  function step(now) {
+    const pos = driverPos(now);
+    const last = kfs[kfs.length - 1];
+    if (last && Math.hypot(pos.x - last.tx, pos.y - last.ty) > 140) reset(); // mode switch: start a new track
+    const l2 = kfs[kfs.length - 1];
+    if (!l2 || Math.hypot(pos.x - l2.tx, pos.y - l2.ty) >= STEP) addKeyframe(pos.x, pos.y);
+    const tip = kfs[kfs.length - 1];
+    const userDriving = manual(now);
+    // the demo adds a global fix every so often, once the estimate has drifted enough
+    if (!userDriving && tip.id - lastFixId >= DEMO_FIX_EVERY && err(tip) > DEMO_FIX_ERR) localize();
+    const ease = reduce ? 1 : 0.12;
+    kfs.forEach((k) => { k.ex += (k.sx - k.ex) * ease; k.ey += (k.sy - k.ey) * ease; });
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+    if (!kfs.length) return;
+    ctx.lineJoin = "round";
+    ctx.lineCap = "round";
+
+    // once the trail is full, its oldest part fades out
+    const fade = (i) => (kfs.length < MAX_KF ? 1 : Math.min(1, 0.12 + i / (MAX_KF * 0.3)));
+
+    // ground truth (dotted)
+    ctx.setLineDash([3, 6]);
+    ctx.strokeStyle = col.muted;
+    ctx.globalAlpha = 0.6;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    kfs.forEach((k, i) => (i ? ctx.lineTo(k.tx, k.ty) : ctx.moveTo(k.tx, k.ty)));
+    ctx.stroke();
+
+    // error links: true pose to estimated pose
+    ctx.setLineDash([]);
+    ctx.strokeStyle = col.warn;
+    ctx.globalAlpha = 0.35;
+    ctx.lineWidth = 1;
+    kfs.forEach((k) => {
+      ctx.beginPath();
+      ctx.moveTo(k.tx, k.ty);
+      ctx.lineTo(k.ex, k.ey);
+      ctx.stroke();
+    });
+
+    // estimated trajectory (odometry edges)
+    ctx.strokeStyle = col.accent;
+    ctx.lineWidth = 2;
+    for (let i = 1; i < kfs.length; i++) {
+      const p = kfs[i - 1], q = kfs[i];
+      ctx.globalAlpha = fade(i);
+      ctx.beginPath();
+      ctx.moveTo(p.ex, p.ey);
+      ctx.lineTo(q.ex, q.ey);
+      ctx.stroke();
+    }
+
+    // loop-closure edges (dashed green) between the estimates of a revisited place
+    ctx.setLineDash([6, 4]);
+    ctx.strokeStyle = col.loop;
+    ctx.lineWidth = 2;
+    ctx.globalAlpha = 0.9;
+    loops.forEach((l) => {
+      ctx.beginPath();
+      ctx.moveTo(l.a.ex, l.a.ey);
+      ctx.lineTo(l.b.ex, l.b.ey);
+      ctx.stroke();
+    });
+    ctx.setLineDash([]);
+
+    // keyframe nodes; fixed ones get a gold ring
+    kfs.forEach((k, i) => {
+      ctx.globalAlpha = fade(i);
+      ctx.fillStyle = col.accent;
+      ctx.beginPath();
+      ctx.arc(k.ex, k.ey, 3.2, 0, Math.PI * 2);
+      ctx.fill();
+      if (k.fixed) {
+        ctx.strokeStyle = col.warn;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(k.ex, k.ey, 7, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    });
+
+    // current pose (the robot)
+    const tip = kfs[kfs.length - 1];
+    ctx.fillStyle = col.accent;
+    ctx.globalAlpha = 0.25;
+    ctx.beginPath();
+    ctx.arc(tip.ex, tip.ey, 11, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.beginPath();
+    ctx.arc(tip.ex, tip.ey, 5.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // ripples
+    ctx.lineWidth = 2;
+    for (let i = ripples.length - 1; i >= 0; i--) {
+      const r = ripples[i];
+      ctx.strokeStyle = r.loop ? col.loop : col.warn;
+      ctx.globalAlpha = 1 - r.t;
+      ctx.beginPath();
+      ctx.arc(r.x, r.y, 8 + r.t * 56, 0, Math.PI * 2);
+      ctx.stroke();
+      r.t += 0.035;
+      if (r.t >= 1) ripples.splice(i, 1);
+    }
+    ctx.globalAlpha = 1;
+
+    // error meter: how far the robot's current estimate is from the truth
+    meterBar.style.transform = "scaleX(" + Math.min(1, err(tip) / 60).toFixed(3) + ")";
+  }
+
+  function frame() { step(performance.now()); draw(); }
+
   function resize() {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     w = box.clientWidth; h = box.clientHeight;
     canvas.width = w * dpr; canvas.height = h * dpr;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    colors();
+    readColors();
+    reset();
+    if (reduce) { for (let i = 0; i < 240; i++) step(performance.now()); }
     draw();
   }
-  function draw() {
-    ctx.clearRect(0, 0, w, h);
-    const reach = Math.min(w, h) * 0.24;
-    ctx.lineWidth = 1;
-    for (let i = 0; i < N; i++) {
-      const a = nodes[i];
-      for (let j = i + 1; j < N; j++) {
-        const b = nodes[j];
-        const d = Math.hypot((a.x - b.x) * w, (a.y - b.y) * h);
-        if (d < reach) {
-          ctx.globalAlpha = (1 - d / reach) * (a.key || b.key ? 0.9 : 0.5);
-          ctx.strokeStyle = a.key || b.key ? accent : line;
-          ctx.beginPath();
-          ctx.moveTo(a.x * w, a.y * h);
-          ctx.lineTo(b.x * w, b.y * h);
-          ctx.stroke();
-        }
-      }
-    }
-    ctx.globalAlpha = 1;
-    nodes.forEach((n) => {
-      const x = n.x * w, y = n.y * h;
-      ctx.fillStyle = n.key ? accent : line;
-      ctx.beginPath();
-      ctx.arc(x, y, n.key ? 4 : 2.2, 0, Math.PI * 2);
-      ctx.fill();
-      if (n.key) {
-        ctx.strokeStyle = accent;
-        ctx.globalAlpha = 0.35;
-        ctx.beginPath();
-        ctx.arc(x, y, 10, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.globalAlpha = 1;
-      }
-    });
-  }
-  function step() {
-    nodes.forEach((n) => {
-      n.x += n.vx; n.y += n.vy;
-      if (n.x < 0.02 || n.x > 0.98) n.vx *= -1;
-      if (n.y < 0.02 || n.y > 0.98) n.vy *= -1;
-    });
-    draw();
-  }
+
+  // --- input ---
+  box.addEventListener("pointerenter", (e) => {
+    const r = canvas.getBoundingClientRect();
+    pointer = { x: e.clientX - r.left, y: e.clientY - r.top };
+    pointerAt = performance.now();
+    hovering = true;
+  });
+  box.addEventListener("pointerleave", () => { hovering = false; pointerAt = performance.now(); });
+  box.addEventListener("pointermove", (e) => {
+    const r = canvas.getBoundingClientRect();
+    pointer = { x: e.clientX - r.left, y: e.clientY - r.top };
+    pointerAt = performance.now();
+    if (!userSeen) { userSeen = true; hint.classList.add("gone"); }
+    if (reduce) { step(pointerAt); draw(); }
+  });
+  box.addEventListener("click", () => { localize(); if (reduce) { step(performance.now()); draw(); } });
 
   window.addEventListener("resize", resize);
-  window.matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", () => { colors(); draw(); });
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", () => { readColors(); draw(); });
   resize();
-  if (reduce) return; // one still frame
+  if (reduce) return; // no continuous animation; the graph still responds to input
 
   let running = false;
-  const loop = () => { if (running) { step(); requestAnimationFrame(loop); } };
+  const loop = () => { if (running) { frame(); requestAnimationFrame(loop); } };
   if ("IntersectionObserver" in window) {
     new IntersectionObserver(([e]) => {
       const was = running;
