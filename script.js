@@ -165,7 +165,7 @@ function initGraph() {
   const LC_COOLDOWN = 6;    // keyframes to wait between loop closures
   const BIAS = { x: 0.09, y: 0.05 }; // systematic odometry error per px travelled
   // constraint weights (information): odometry is the weak one
-  const W_ODO = 1, W_LC = 30, W_FIX = 300, W_GAUGE = 1000;
+  const W_ODO = 1, W_LC = 30, W_FIX = 600, W_GAUGE = 1000;
   // self-driving demo
   const DEMO_SPEED = 0.0084;  // figure-eight speed (was 0.012; 30% slower)
   const DEMO_FIX_EVERY = 14;  // at least this many keyframes between automatic global fixes
