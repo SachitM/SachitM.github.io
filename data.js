@@ -137,6 +137,7 @@ const TIMELINE = [
     media: ["assets/img/medbuddy1.jpeg", "assets/img/medbuddy2.jpeg"],
     links: [{ label: "IEEE Paper", url: "https://ieeexplore.ieee.org/document/8256723" }],
   },
+  { marker: true, year: "2017 – 2019", title: "GreyOrange · R&D Embedded Engineer" },
   {
     year: "2017 – 2019",
     title: "Butler Warehouse AMR",
