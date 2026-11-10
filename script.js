@@ -139,14 +139,84 @@ function renderTimeline() {
   });
 }
 
+// The optimizer's data structure: a pose graph over the last `cap` 2D positions, kept in
+// information (normal-equation) form  A x = b.  Every constraint is a weighted squared error
+// and simply adds into A and b:
+//   edge(i, j, z, w)   relative:  x_j - x_i = z
+//   prior(i, p, w)     absolute:  x_i = p
+// solve() minimises the total weighted error exactly (dense Cholesky, ~1 ms for 160 nodes).
+// marginalizeFirst() drops the oldest node with a Schur complement. That is exact: the
+// remaining nodes get the same solution they would have had if the node were still there,
+// so its anchor, fixes and loop closures are carried forward instead of being thrown away.
+function makeInfoGraph(cap) {
+  const S = cap;                                   // row stride of the flat matrix
+  const A = new Float64Array(S * S);
+  const bx = new Float64Array(S), by = new Float64Array(S);
+  let n = 0;
+  return {
+    get size() { return n; },
+    reset() { A.fill(0); bx.fill(0); by.fill(0); n = 0; },
+    addNode() { return n++; },                     // new rows and columns start at zero
+    edge(i, j, zx, zy, wt) {
+      A[i * S + i] += wt; A[j * S + j] += wt; A[i * S + j] -= wt; A[j * S + i] -= wt;
+      bx[j] += wt * zx; bx[i] -= wt * zx; by[j] += wt * zy; by[i] -= wt * zy;
+    },
+    prior(i, px, py, wt) { A[i * S + i] += wt; bx[i] += wt * px; by[i] += wt * py; },
+    marginalizeFirst() {
+      const a00 = A[0];
+      for (let i = 1; i < n; i++) {
+        const f = A[i * S] / a00;
+        if (f !== 0) {
+          for (let j = 1; j < n; j++) A[i * S + j] -= f * A[j];
+          bx[i] -= f * bx[0]; by[i] -= f * by[0];
+        }
+      }
+      for (let i = 1; i < n; i++) {                // shift the remaining block up and left
+        for (let j = 1; j < n; j++) A[(i - 1) * S + (j - 1)] = A[i * S + j];
+        bx[i - 1] = bx[i]; by[i - 1] = by[i];
+      }
+      const last = n - 1;                          // clear the vacated row, column and entries
+      for (let k = 0; k < n; k++) { A[last * S + k] = 0; A[k * S + last] = 0; }
+      bx[last] = 0; by[last] = 0;
+      n--;
+    },
+    solve() {
+      const L = new Float64Array(n * n);
+      for (let i = 0; i < n; i++) {
+        for (let j = 0; j <= i; j++) {
+          let s = A[i * S + j];
+          for (let k = 0; k < j; k++) s -= L[i * n + k] * L[j * n + k];
+          if (i === j) { if (s <= 1e-12) return null; L[i * n + i] = Math.sqrt(s); }
+          else L[i * n + j] = s / L[j * n + j];
+        }
+      }
+      const back = (b) => {
+        const y = new Float64Array(n), x = new Float64Array(n);
+        for (let i = 0; i < n; i++) {
+          let s = b[i];
+          for (let k = 0; k < i; k++) s -= L[i * n + k] * y[k];
+          y[i] = s / L[i * n + i];
+        }
+        for (let i = n - 1; i >= 0; i--) {
+          let s = y[i];
+          for (let k = i + 1; k < n; k++) s -= L[k * n + i] * x[k];
+          x[i] = s / L[i * n + i];
+        }
+        return x;
+      };
+      return { x: back(bx), y: back(by) };
+    },
+  };
+}
+
 // Interactive pose graph with a real optimizer (2D positions only).
 //
 // A robot drives along the pointer (or a demo loop). Odometry edges carry a noisy,
 // biased measurement of each step, so dead reckoning drifts. Constraints added later,
 // a loop closure (automatic) or a localization fix (click), are folded in by re-solving
-// the WHOLE graph: minimise  sum  w * |x_j - x_i - z|^2  over all keyframe positions.
-// With positions only this is linear least squares, solved exactly with a Cholesky
-// factorisation. Orientation is not modelled, which is what would make it nonlinear.
+// the WHOLE window: minimise  sum  w * |x_j - x_i - z|^2  over all keyframe positions.
+// With positions only this is linear least squares, solved exactly (see makeInfoGraph).
+// Orientation is not modelled, which is what would make it nonlinear.
 function initGraph() {
   const box = document.getElementById("hero-art");
   if (!box) return;
@@ -193,7 +263,7 @@ function initGraph() {
   // odometry measurement from the previous keyframe (ux,uy)
   const kfs = [];
   const loops = [];   // loop-closure constraints {a, b, zx, zy}
-  const priors = [];  // absolute constraints {kf, x, y, w}: localization fixes and the gauge anchor
+  const info = makeInfoGraph(MAX_KF + 2);  // the optimizer's normal equations for the window
   const ripples = [];
   let nextId = 0, lastLCId = -999, lastFixId = -999;
   let pointer = null, pointerAt = 0, demoT = 0, userSeen = false, hovering = false;
@@ -206,62 +276,18 @@ function initGraph() {
     col = { accent: get("--accent", col.accent), line: get("--border", col.line), warn: get("--gold", col.warn), muted: get("--muted", col.muted), loop: get("--loop", col.loop) };
   }
 
-  function reset() { kfs.length = 0; loops.length = 0; priors.length = 0; ripples.length = 0; lastLCId = -999; lastFixId = -999; }
+  function reset() { kfs.length = 0; loops.length = 0; info.reset(); ripples.length = 0; lastLCId = -999; lastFixId = -999; }
 
   // ---- the optimizer ----
-  // Solve A v = b for each right-hand side with a dense Cholesky factorisation (A is SPD
-  // because the gauge prior pins the graph). n is at most MAX_KF, so this takes ~1 ms.
-  function choleskySolve(A, n, rhs) {
-    const L = new Float64Array(n * n);
-    for (let i = 0; i < n; i++) {
-      for (let j = 0; j <= i; j++) {
-        let s = A[i * n + j];
-        for (let k = 0; k < j; k++) s -= L[i * n + k] * L[j * n + k];
-        if (i === j) { if (s <= 1e-12) return null; L[i * n + i] = Math.sqrt(s); }
-        else L[i * n + j] = s / L[j * n + j];
-      }
-    }
-    return rhs.map((b) => {
-      const y = new Float64Array(n), x = new Float64Array(n);
-      for (let i = 0; i < n; i++) {
-        let s = b[i];
-        for (let k = 0; k < i; k++) s -= L[i * n + k] * y[k];
-        y[i] = s / L[i * n + i];
-      }
-      for (let i = n - 1; i >= 0; i--) {
-        let s = y[i];
-        for (let k = i + 1; k < n; k++) s -= L[k * n + i] * x[k];
-        x[i] = s / L[i * n + i];
-      }
-      return x;
-    });
-  }
+  // Constraints are added to `info` as they arrive; every new loop closure or fix re-solves
+  // the whole window exactly (see makeInfoGraph).
+  const idx = (k) => k.id - kfs[0].id; // a keyframe's row in the information matrix
 
   function optimize() {
-    const n = kfs.length;
-    if (n < 2) return;
-    const base = kfs[0].id;
-    const A = new Float64Array(n * n), bx = new Float64Array(n), by = new Float64Array(n);
-    // a relative constraint  x_j - x_i = z  with weight wt
-    const edge = (i, j, zx, zy, wt) => {
-      A[i * n + i] += wt; A[j * n + j] += wt; A[i * n + j] -= wt; A[j * n + i] -= wt;
-      bx[j] += wt * zx; bx[i] -= wt * zx; by[j] += wt * zy; by[i] -= wt * zy;
-    };
-    for (let i = 1; i < n; i++) edge(i - 1, i, kfs[i].ux, kfs[i].uy, W_ODO);
-    loops.forEach((l) => edge(l.a.id - base, l.b.id - base, l.zx, l.zy, W_LC));
-    priors.forEach((p) => {  // an absolute constraint  x_i = p
-      const i = p.kf.id - base;
-      A[i * n + i] += p.w; bx[i] += p.w * p.x; by[i] += p.w * p.y;
-    });
-    const sol = choleskySolve(A, n, [bx, by]);
+    if (kfs.length < 2) return;
+    const sol = info.solve();
     if (!sol) return;
-    kfs.forEach((k, i) => { k.sx = sol[0][i]; k.sy = sol[1][i]; });
-  }
-
-  // the first keyframe carries a strong prior so the whole graph cannot slide
-  function setGauge() {
-    for (let i = priors.length - 1; i >= 0; i--) if (priors[i].gauge) priors.splice(i, 1);
-    priors.push({ kf: kfs[0], x: kfs[0].sx, y: kfs[0].sy, w: W_GAUGE, gauge: true });
+    kfs.forEach((k, i) => { k.sx = sol.x[i]; k.sy = sol.y[i]; });
   }
 
   function addKeyframe(x, y) {
@@ -276,13 +302,16 @@ function initGraph() {
       kf.ex = prev.ex + kf.ux; kf.ey = prev.ey + kf.uy;
     }
     kfs.push(kf);
-    if (kfs.length === 1) setGauge();
+    info.addNode();
+    if (prev) info.edge(kfs.length - 2, kfs.length - 1, kf.ux, kf.uy, W_ODO);
+    else info.prior(0, x, y, W_GAUGE); // the first keyframe carries a strong prior so the graph cannot slide
     if (kfs.length > MAX_KF) {
+      // Drop the oldest keyframe EXACTLY: marginalizing it moves everything it carried (the
+      // anchor, localization fixes, loop closures to it) onto the keyframes that remain.
+      info.marginalizeFirst();
       kfs.shift();
       const first = kfs[0].id;
-      for (let i = loops.length - 1; i >= 0; i--) if (loops[i].a.id < first) loops.splice(i, 1);
-      for (let i = priors.length - 1; i >= 0; i--) if (priors[i].kf.id < first) priors.splice(i, 1);
-      setGauge();
+      for (let i = loops.length - 1; i >= 0; i--) if (loops[i].a.id < first) loops.splice(i, 1); // drawing only
     }
     detectLoop();
   }
@@ -301,7 +330,9 @@ function initGraph() {
     if (best < 0) return;
     const a = kfs[best];
     // what the "scan match" measures: the true offset between the two poses (plus a little noise)
-    loops.push({ a, b: cur, zx: cur.tx - a.tx + (Math.random() - 0.5), zy: cur.ty - a.ty + (Math.random() - 0.5) });
+    const lc = { a, b: cur, zx: cur.tx - a.tx + (Math.random() - 0.5), zy: cur.ty - a.ty + (Math.random() - 0.5) };
+    loops.push(lc);
+    info.edge(idx(a), k, lc.zx, lc.zy, W_LC);
     ripples.push({ x: cur.tx, y: cur.ty, t: 0, loop: true });
     lastLCId = cur.id;
     optimize();
@@ -313,7 +344,7 @@ function initGraph() {
     if (!tip || kfs.length < 2 || tip.fixed) return;
     tip.fixed = true;
     lastFixId = tip.id;
-    priors.push({ kf: tip, x: tip.tx, y: tip.ty, w: W_FIX });
+    info.prior(idx(tip), tip.tx, tip.ty, W_FIX);
     ripples.push({ x: tip.tx, y: tip.ty, t: 0 });
     optimize();
   }
