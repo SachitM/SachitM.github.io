@@ -151,7 +151,7 @@ const TIMELINE = [
   { marker: true, year: "2019 – 2021", title: "Carnegie Mellon University · M.S. Robotic Systems Development" },
   {
     year: "2020",
-    title: "SALSA · Semantic Assisted Lifelong, Structure Aware SLAM",
+    title: "SALSA · Semantic Assisted Lifelong SLAM",
     // context: "CMU 16-833 Robot Localization & Mapping · With Ayush Jhalani and Heethesh Vhavle",
     // TODO: add which parts of the pipeline you built
     text:
@@ -172,11 +172,12 @@ const TIMELINE = [
     year: "2020",
     title: "ALIGN · Autonomous Payload Handling Vehicle",
     context: "CMU MRSD capstone · with PIX Moving",
-    // TODO: confirm this is the PIX Moving project, and add the outcome
+    // TODO (optional): add the outcome, e.g. the final demo result
     text:
       "For our capstone, I developed the localization, navigation, precision-docking, and safety behaviors of an autonomous vehicle that works with modular payload pods in geo-fenced environments. The vehicle localizes itself, navigates to a pod, docks with it precisely, and picks it up or drops it off, coordinated by a state machine with an operator UI.",
     tags: ["Autonomous driving", "LiDAR", "Localization", "Navigation", "Safety"],
-    media: ["assets/img/align1.png", "assets/img/align2.png", "assets/img/align3.png"],
+    media: ["assets/img/align1.png", "assets/img/align2.png", "assets/img/align3.png", "assets/img/align4.jpeg"],
+    links: [{ label: "CMU MRSD project page", url: "https://mrsdprojects.ri.cmu.edu/2020teamj/" }],
   },
   {
     year: "2021",
