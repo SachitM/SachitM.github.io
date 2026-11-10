@@ -42,15 +42,15 @@ const SKILLS = [
     items: [
       "Visual and visual-inertial odometry (VIO)", "Visual SLAM", "Pose graph optimization",
       "Robust outlier rejection and loop-closure validation", "Nonlinear optimization (Ceres, GTSAM)",
-      "Sensor fusion", "Object-based and lifelong localization", "3D geometry",
+      "Structure from motion (SfM, COLMAP)", "Sensor fusion", "Object-based and lifelong localization", "3D geometry",
     ],
   },
   {
-    group: "Scene understanding and 3D reconstruction",
+    group: "Mapping and scene understanding",
     items: [
-      "Spatio-temporal scene graphs", "Room segmentation and semantic labeling", "3D Gaussian Splatting",
-      "COLMAP and multi-view reconstruction", "Dense stereo depth", "Semantic segmentation (Mask R-CNN)",
-      "Point clouds and LiDAR perception",
+      "Occupancy grid mapping", "Voxel maps", "TSDFs", "Point-cloud maps", "Spatio-temporal scene graphs",
+      "3D Gaussian Splatting", "Room segmentation and semantic labeling", "Semantic segmentation",
+      "Dense stereo depth", "Point clouds and LiDAR perception",
     ],
   },
   {
