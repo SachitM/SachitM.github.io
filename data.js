@@ -44,19 +44,32 @@ const SITE = {
 // Shown as a static "Skills" section. One row per group; items are joined with commas.
 const SKILLS = [
   {
-    group: "SLAM",
+    group: "Visual SLAM",
     items: [
-      "Visual and visual-inertial odometry (VIO)", "Visual SLAM", "Extended Kalman Filters (EKF)", "Pose graph optimization",
-      "Robust outlier rejection and loop-closure validation", "Nonlinear optimization (Ceres, GTSAM)",
-      "Structure from motion (SfM, COLMAP)", "Sensor fusion", "Object-based and lifelong localization", "3D geometry",
+      "Visual and visual-inertial odometry (VIO)", "Visual SLAM", "Structure from motion (SfM, COLMAP)",
+      "Visual place recognition (VPR)", "Object-based and lifelong localization", "Multi-view geometry",
+    ],
+  },
+  {
+    group: "LiDAR SLAM",
+    items: [
+      "LiDAR and LiDAR-inertial odometry (LOAM, LIO)", "Scan matching and point-cloud registration (ICP, GICP, NDT)",
+      "NDT mapping", "2D LiDAR SLAM", "Motion distortion correction (deskewing)", "LiDAR place recognition",
+    ],
+  },
+  {
+    group: "State estimation and optimization",
+    items: [
+      "Pose graph optimization", "Nonlinear optimization (Ceres, GTSAM)", "Extended Kalman Filters (EKF)",
+      "Robust outlier rejection and loop-closure validation", "Sensor fusion",
     ],
   },
   {
     group: "Mapping and scene understanding",
     items: [
-      "Occupancy grid mapping", "Voxel maps", "TSDFs", "Point-cloud maps", "Spatio-temporal scene graphs",
-      "3D Gaussian Splatting", "Room segmentation and semantic labeling", "Semantic segmentation",
-      "Dense stereo depth", "Point clouds and LiDAR perception",
+      "3D Gaussian Splatting", "Occupancy and voxel maps (occupancy grids, TSDF)", "Point-cloud maps", "Mesh reconstruction",
+      "Spatio-temporal scene graphs", "Change detection", "Room segmentation and semantic labeling", "Semantic segmentation",
+      "Dense stereo depth", "Dynamic-object filtering",
     ],
   },
   {
