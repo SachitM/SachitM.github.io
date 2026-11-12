@@ -90,6 +90,16 @@ button { font: inherit; color: inherit; }
 .hero-copy > :nth-child(7) { animation-delay: 0.36s; }
 
 /* Interactive pose graph (canvas): move to drive, click to localize */
+.hero-viz { min-width: 0; animation: rise 0.9s ease 0.15s both; }
+.viz-title {
+  margin: 0 0 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.viz-sub { margin: 0 0 12px; font-size: 0.85rem; line-height: 1.45; color: var(--muted); }
 .hero-art {
   position: relative;
   aspect-ratio: 1 / 1;
@@ -105,7 +115,6 @@ button { font: inherit; color: inherit; }
   -webkit-user-select: none;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
-  animation: rise 0.9s ease 0.15s both;
 }
 .hero-art canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 
@@ -185,7 +194,7 @@ button { font: inherit; color: inherit; }
   .highlights { grid-template-columns: 1fr; gap: 14px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .hero-copy > *, .hero-art { animation: none; }
+  .hero-copy > *, .hero-viz { animation: none; }
 }
 .eyebrow {
   font-family: "JetBrains Mono", monospace;

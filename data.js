@@ -47,7 +47,7 @@ const SKILLS = [
     group: "Visual SLAM",
     items: [
       "Visual and visual-inertial odometry (VIO)", "Visual SLAM", "Structure from motion (SfM, COLMAP)",
-      "Visual place recognition (VPR)", "Object-based and lifelong localization", "Multi-view geometry",
+      "Learned SLAM and feed-forward 3D reconstruction (DUSt3R, MASt3R, VGGT, Depth Anything 3)", "Visual place recognition (VPR)", "Object-based and lifelong localization", "Multi-view geometry",
     ],
   },
   {
