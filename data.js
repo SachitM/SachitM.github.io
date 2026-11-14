@@ -194,8 +194,8 @@ const TIMELINE = [
     context: "CMU MRSD capstone · with PIX Moving",
     // TODO (optional): add the outcome, e.g. the final demo result
     text:
-      "For our capstone, I developed the localization, navigation, precision-docking, and safety behaviors of an autonomous vehicle that works with modular payload pods in geo-fenced environments. The vehicle localizes itself, navigates to a pod, docks with it precisely, and picks it up or drops it off, coordinated by a state machine with an operator UI.",
-    tags: ["Autonomous driving", "LiDAR", "Localization", "Navigation", "Safety"],
+      "For our capstone, I developed the localization, navigation, precision-docking, and safety behaviors of an autonomous vehicle that works with modular payload pods in geo-fenced environments. The vehicle localizes itself, navigates to a pod, docks with it precisely, and picks it up or drops it off, coordinated by a state machine with an operator UI. I also built the docking simulator in Gazebo and ROS, with the vehicle model, 2D LiDAR, camera, AprilTags, and the pod-lifting actuation, which the team used to develop and test docking before running on hardware.",
+    tags: ["Autonomous driving", "LiDAR", "Localization", "Navigation", "Safety", "Simulation"],
     media: ["assets/img/align1.png", "assets/img/align2.png", "assets/img/align3.png", "assets/img/align4.jpeg"],
     links: [{ label: "CMU MRSD project page", url: "https://mrsdprojects.ri.cmu.edu/2020teamj/" }],
   },
@@ -233,7 +233,7 @@ const TIMELINE = [
     title: "Astro Home Robot",
     context: "Amazon · Consumer Robotics (CoRo) · Software Development Engineer I/II",
     text:
-      "Part of the team that developed and shipped the SLAM module for Amazon's consumer home robot, deployed to thousands of customers. I designed a robust pose graph optimization system that rejects outliers to correct odometry drift, and built benchmarking tools and a long-term autonomy simulation framework to validate behavior over extended time.",
+      "I built and shipped core parts of the SLAM module for Amazon's Astro home robot, deployed to thousands of homes. Deployed the robust pose graph optimization: it rejects bad loop closures and outliers to correct odometry drift, improving stability and map accuracy by over 2.5x within the robot's compute limits. I also led SLAM stability investigations and built the benchmarking, deterministic replay, and long-term autonomy simulation tools that found root causes and improved stability metrics by 2x.",
     tags: ["SLAM", "Pose graph optimization", "Consumer robotics", "Simulation", "Evaluation"],
     media: ["assets/img/astro.jpeg"],
     links: [{ label: "The Science Behind Amazon Astro (video)", url: "https://www.youtube.com/watch?v=YiHE5y1L2Bk" }],
