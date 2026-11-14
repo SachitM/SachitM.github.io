@@ -362,6 +362,7 @@ h1, h2, h3, .title, .tagline { text-wrap: balance; }
 .media.single .media-item video {
   width: auto;
   height: auto;
+  max-width: 100%;
   max-height: 520px;
   border-radius: 10px;
 }

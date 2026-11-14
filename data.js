@@ -229,7 +229,7 @@ const TIMELINE = [
   },
   { marker: true, year: "2021 – Present", title: "Amazon · Software Development Engineer (I → II → III)" },
   {
-    year: "2021 – 2024",
+    year: "2021 – 2025",
     title: "Astro Home Robot",
     context: "Amazon · Consumer Robotics (CoRo) · Software Development Engineer I/II",
     text:
@@ -239,12 +239,23 @@ const TIMELINE = [
     links: [{ label: "The Science Behind Amazon Astro (video)", url: "https://www.youtube.com/watch?v=YiHE5y1L2Bk" }],
   },
   {
-    year: "2025 – Present",
+    year: "Present",
+    title: "Gaussian Splatting Digital Twins of Real Homes",
+    context: "Amazon · Fauna Robotics · Software Development Engineer III",
+    // TODO: confirm with Amazon what can be public; add media only after checking for people and private details
+    text:
+      "I built a pipeline that turns multi-camera scans of real homes into 3D Gaussian Splatting digital twins, used as ground truth for training and evaluating robot perception. The splat acts as a renderer, giving novel views with known poses and dense depth, and as a semantic store, with labels voted across views onto each Gaussian so they can be rendered from any pose. All ground truth with Metric scale, and new videos in the scene are registered into the same frame with visual place recognition and 3D vision foundation model.",
+    tags: ["3D Gaussian Splatting", "COLMAP", "Visual place recognition", "Depth", "Ground truth", "Semantic mapping"],
+    // Figure from the published Continuous Semantic Splatting paper (ICRA 2025): rendered image and semantic labels
+    media: ["assets/img/semantic-splat.png"],
+  },
+  {
+    year: "Present",
     title: "General-Purpose Humanoid Robots",
     context: "Amazon · Fauna Robotics · Software Development Engineer II/III",
     // TODO: confirm what can be said publicly before adding product names or details
     text:
-      "I work on spatial perception and embodied AI for general-purpose humanoid robots, developing scene representations that give them 3D spatial, temporal, and semantic understanding of homes for long-term autonomy.",
+      "I work on spatial perception and embodied AI for general-purpose humanoid robots, developing scene representations that give them 3D spatial, temporal, and semantic understanding of homes for long-term autonomy. Helped design the spatio-temporal scene graph architecture and schema that span live sensing, task memory, and long-term memory. Developed a hybrid geometric and learned room segmentation and labeling for the scene graph, and I also drive the data and ground-truth strategy for evaluating it.",
     tags: ["Spatial AI", "Scene graphs", "3D reconstruction", "Embodied AI"],
     media: ["assets/img/fauna.jpeg"],
   },
