@@ -194,7 +194,7 @@ const TIMELINE = [
     context: "CMU MRSD capstone · with PIX Moving",
     // TODO (optional): add the outcome, e.g. the final demo result
     text:
-      "For our capstone, I developed the localization, navigation, precision-docking, and safety behaviors of an autonomous vehicle that works with modular payload pods in geo-fenced environments. The vehicle localizes itself, navigates to a pod, docks with it precisely, and picks it up or drops it off, coordinated by a state machine with an operator UI. I also built the docking simulator in Gazebo and ROS, with the vehicle model, 2D LiDAR, camera, AprilTags, and the pod-lifting actuation, which the team used to develop and test docking before running on hardware.",
+      "For our capstone, I developed the localization, navigation, precision-docking, and safety behaviors of an autonomous vehicle that works with modular payload pods in geo-fenced environments. The vehicle localizes itself, navigates to a pod, docks with it precisely, and picks it up or drops it off, coordinated by a state machine with an operator UI. I also built the docking simulator in Gazebo and ROS, with the vehicle model, 3D LiDAR, camera, AprilTags, and the pod-lifting actuation, which the team used to develop and test docking before running on hardware.",
     tags: ["Autonomous driving", "LiDAR", "Localization", "Navigation", "Safety", "Simulation"],
     media: ["assets/img/align1.png", "assets/img/align2.png", "assets/img/align3.png", "assets/img/align4.jpeg"],
     links: [{ label: "CMU MRSD project page", url: "https://mrsdprojects.ri.cmu.edu/2020teamj/" }],
