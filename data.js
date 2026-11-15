@@ -227,7 +227,7 @@ const TIMELINE = [
       { label: "Code on GitHub", url: "https://github.com/SachitM/Structure-Aware-Object-Representation-for-Object-SLAM" },
     ],
   },
-  { marker: true, year: "2021 – Present", title: "Amazon · Software Development Engineer (I → II → III)" },
+  { marker: true, year: "Present", title: "Amazon · Senior Software Development Engineer" },
   {
     year: "2021 – 2025",
     title: "Astro Home Robot",
@@ -239,7 +239,16 @@ const TIMELINE = [
     links: [{ label: "The Science Behind Amazon Astro (video)", url: "https://www.youtube.com/watch?v=YiHE5y1L2Bk" }],
   },
   {
-    year: "Present",
+    year: "Personal project", // TODO: replace with the year (e.g. "2026")
+    title: "Pin-Art Tactile Gripper and ACT Policies",
+    text:
+      "I built a low-cost robot arm with a gripper made from a pin-art toy: sliding pins conform to whatever they press against, and a small camera reads the pin pattern as a visual signal of contact shape and rough force. To collect demonstrations, I wrote my own teleoperation pipeline that combines a GUI with AprilTag tracking of the end effector, then used the data to train ACT (Action Chunking with Transformers) policies for contact-rich skills such as turning a stove knob and pressing onto small objects.",
+    tags: ["Imitation learning", "ACT", "Tactile sensing", "Teleoperation", "AprilTags", "Manipulation"],
+    portrait: true,
+    media: ["assets/img/arm-knob.mp4", "assets/img/arm-press.mp4"],
+  },
+  {
+    year: "2026",
     title: "Gaussian Splatting Digital Twins of Real Homes",
     context: "Amazon · Fauna Robotics · Software Development Engineer III",
     // TODO: confirm with Amazon what can be public; add media only after checking for people and private details
@@ -250,7 +259,7 @@ const TIMELINE = [
     media: ["assets/img/semantic-splat.png"],
   },
   {
-    year: "Present",
+    year: "2026 - Present",
     title: "General-Purpose Humanoid Robots",
     context: "Amazon · Fauna Robotics · Software Development Engineer II/III",
     // TODO: confirm what can be said publicly before adding product names or details

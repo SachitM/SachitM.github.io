@@ -349,6 +349,8 @@ h1, h2, h3, .title, .tagline { text-wrap: balance; }
   width: 100%;
 }
 .media.grid.many .media-item:first-child { aspect-ratio: 16 / 9; }
+/* Phone-shot (vertical) videos: tall tiles so they fill the frame. */
+.media.grid.portrait .media-item { aspect-ratio: 9 / 16; }
 /* A single photo keeps its natural shape, capped so tall photos don't dominate. */
 .media.single .media-item { aspect-ratio: auto; background: transparent; }
 .media-item img,

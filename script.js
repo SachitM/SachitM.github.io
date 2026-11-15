@@ -65,6 +65,7 @@ function renderMedia(entry) {
   }
   wrap.classList.add(items.length === 1 ? "single" : "grid");
   if (items.length >= 3) wrap.classList.add("many");
+  if (entry.portrait) wrap.classList.add("portrait");
   items.forEach((src) => {
     const btn = el("button", "media-item");
     btn.setAttribute("aria-label", `Enlarge media for ${entry.title}`);
