@@ -118,7 +118,7 @@ const TIMELINE = [
     // TODO: one line on the sensors and mechanism
     text:
       "My first robot, designed, built, and soldered entirely on my own: a small wheeled car that is meant to clear an obstacle course.This  led me to co-found my school's robotics club, Robodexterous.",
-    tags: ["Embedded", "Mechanical design", "Sensing"],
+    // tags: ["Embedded", "Mechanical design"],
     media: ["assets/img/dps1.jpeg"],
   },
   {
@@ -152,7 +152,7 @@ const TIMELINE = [
     context: "VIT · Bachelor's thesis",
     text:
       "Many patients must carry medical equipment everywhere, which hinders daily life and slows recovery. For my bachelor's thesis I designed and built MedBuddy, a robot that carries that weight for them. It follows the patient autonomously using a unique color-coded marker, avoids obstacles, supports balance by monitoring their orientation and acting on a 'fall index', and doubles as an IoT medicine-reminder system. The work was published at IEEE RTEICT 2017.",
-    tags: ["Healthcare robotics", "Embedded", "Computer vision", "IoT", "Research"],
+    tags: ["Healthcare robotics", "Embedded", "Computer vision", "IoT"],
     media: ["assets/img/medbuddy1.jpeg", "assets/img/medbuddy2.jpeg"],
     links: [{ label: "IEEE Paper", url: "https://ieeexplore.ieee.org/document/8256723" }],
   },
@@ -243,14 +243,14 @@ const TIMELINE = [
     title: "Pin-Art Tactile Gripper and ACT Policies",
     text:
       "I built a low-cost robot arm with a gripper made from a pin-art toy: sliding pins conform to whatever they press against, and a small camera reads the pin pattern as a visual signal of contact shape and rough force. To collect demonstrations, I wrote my own teleoperation pipeline that combines a GUI with AprilTag tracking of the end effector, then used the data to train ACT (Action Chunking with Transformers) policies for contact-rich skills such as turning a stove knob and dragging/orienting small objects.",
-    tags: ["Imitation learning", "ACT", "Tactile sensing", "Teleoperation", "AprilTags", "Manipulation"],
+    tags: ["ACT", "Visio-Tactile sensing", "Teleoperation", "AprilTags", "Manipulation"],
     portrait: true,
     media: ["assets/img/arm-knob.mp4", "assets/img/arm-press.mp4"],
   },
   {
     year: "2026",
     title: "Gaussian Splatting Digital Twins of Real Homes",
-    context: "Amazon · Fauna Robotics · Software Development Engineer III",
+    context: "Amazon · Fauna Robotics · Senior Software Development Engineer",
     // TODO: confirm with Amazon what can be public; add media only after checking for people and private details
     text:
       "I built a pipeline that turns multi-camera scans of real homes into 3D Gaussian Splatting digital twins, used as ground truth for training and evaluating robot perception. The splat acts as a renderer, giving novel views with known poses and dense depth, and as a semantic store, with labels voted across views onto each Gaussian so they can be rendered from any pose. All ground truth with Metric scale, and new videos in the scene are registered into the same frame with visual place recognition and 3D vision foundation model.",
@@ -261,7 +261,7 @@ const TIMELINE = [
   {
     year: "2026 - Present",
     title: "General-Purpose Humanoid Robots",
-    context: "Amazon · Fauna Robotics · Software Development Engineer II/III",
+    context: "Amazon · Fauna Robotics · Senior Software Development Engineer",
     // TODO: confirm what can be said publicly before adding product names or details
     text:
       "I work on spatial perception and embodied AI for general-purpose humanoid robots, developing scene representations that give them 3D spatial, temporal, and semantic understanding of homes for long-term autonomy. Helped design the spatio-temporal scene graph architecture and schema that span live sensing, task memory, and long-term memory. Developed a hybrid geometric and learned room segmentation and labeling for the scene graph, and I also drive the data and ground-truth strategy for evaluating it.",
