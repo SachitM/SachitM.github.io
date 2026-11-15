@@ -242,7 +242,7 @@ const TIMELINE = [
     year: "Personal project", // TODO: replace with the year (e.g. "2026")
     title: "Pin-Art Tactile Gripper and ACT Policies",
     text:
-      "I built a low-cost robot arm with a gripper made from a pin-art toy: sliding pins conform to whatever they press against, and a small camera reads the pin pattern as a visual signal of contact shape and rough force. To collect demonstrations, I wrote my own teleoperation pipeline that combines a GUI with AprilTag tracking of the end effector, then used the data to train ACT (Action Chunking with Transformers) policies for contact-rich skills such as turning a stove knob and pressing onto small objects.",
+      "I built a low-cost robot arm with a gripper made from a pin-art toy: sliding pins conform to whatever they press against, and a small camera reads the pin pattern as a visual signal of contact shape and rough force. To collect demonstrations, I wrote my own teleoperation pipeline that combines a GUI with AprilTag tracking of the end effector, then used the data to train ACT (Action Chunking with Transformers) policies for contact-rich skills such as turning a stove knob and dragging/orienting small objects.",
     tags: ["Imitation learning", "ACT", "Tactile sensing", "Teleoperation", "AprilTags", "Manipulation"],
     portrait: true,
     media: ["assets/img/arm-knob.mp4", "assets/img/arm-press.mp4"],
